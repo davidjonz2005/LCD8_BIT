@@ -26,47 +26,50 @@
 #include "MCUFRIEND_kbv.h"
 #include "main.h"
 
-void Gp_out(GPIO_TypeDef *GPIOx, uint32_t Pin)
+void Gp_out(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
 {
 
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Pin = Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+		GPIO_InitStruct.Pull = Pull;
+	
     HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
 	
 }
 
-void Gp_in(GPIO_TypeDef *GPIOx, uint32_t Pin)
+void Gp_in(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
 {
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_InitStruct.Pin = Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStruct.Pull = Pull;
     HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
 }
 
 void setWriteDir()
 {
-    Gp_out(D0_GPIO_Port, D0_Pin);
-    Gp_out(D1_GPIO_Port, D1_Pin);
-    Gp_out(D2_GPIO_Port, D2_Pin);
-    Gp_out(D3_GPIO_Port, D3_Pin);
-    Gp_out(D4_GPIO_Port, D4_Pin);
-    Gp_out(D5_GPIO_Port, D5_Pin);
-    Gp_out(D6_GPIO_Port, D6_Pin);
-    Gp_out(D7_GPIO_Port, D7_Pin);
+    Gp_out(D0_GPIO_Port, D0_Pin,GPIO_NOPULL);
+    Gp_out(D1_GPIO_Port, D1_Pin,GPIO_NOPULL);
+    Gp_out(D2_GPIO_Port, D2_Pin,GPIO_NOPULL);
+    Gp_out(D3_GPIO_Port, D3_Pin,GPIO_NOPULL);
+    Gp_out(D4_GPIO_Port, D4_Pin,GPIO_NOPULL);
+    Gp_out(D5_GPIO_Port, D5_Pin,GPIO_NOPULL);
+    Gp_out(D6_GPIO_Port, D6_Pin,GPIO_NOPULL);
+    Gp_out(D7_GPIO_Port, D7_Pin,GPIO_NOPULL);
 }
 void setReadDir()
 {
-    Gp_in(D0_GPIO_Port, D0_Pin);
-    Gp_in(D1_GPIO_Port, D1_Pin);
-    Gp_in(D2_GPIO_Port, D2_Pin);
-    Gp_in(D3_GPIO_Port, D3_Pin);
-    Gp_in(D4_GPIO_Port, D4_Pin);
-    Gp_in(D5_GPIO_Port, D5_Pin);
-    Gp_in(D6_GPIO_Port, D6_Pin);
-    Gp_in(D7_GPIO_Port, D7_Pin);
+    Gp_in(D0_GPIO_Port, D0_Pin,GPIO_NOPULL);
+    Gp_in(D1_GPIO_Port, D1_Pin,GPIO_NOPULL);
+    Gp_in(D2_GPIO_Port, D2_Pin,GPIO_NOPULL);
+    Gp_in(D3_GPIO_Port, D3_Pin,GPIO_NOPULL);
+    Gp_in(D4_GPIO_Port, D4_Pin,GPIO_NOPULL);
+    Gp_in(D5_GPIO_Port, D5_Pin,GPIO_NOPULL);
+    Gp_in(D6_GPIO_Port, D6_Pin,GPIO_NOPULL);
+    Gp_in(D7_GPIO_Port, D7_Pin,GPIO_NOPULL);
 }
 uint32_t test;
 void write_8(uint8_t d)                         

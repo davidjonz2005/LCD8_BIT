@@ -39,6 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f1xx_hal.h"
+#include "adc.h"
 #include "gpio.h"
 
 /* USER CODE BEGIN Includes */
@@ -47,13 +48,18 @@
 
 #include "dwt_stm32_delay.h"
 #include "glcdfont.c"
+#include "TouchScreen.h"
+#include <TouchCalibration.h>         //Adafruit Library
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
- uint16_t xxx ;
+int pixel_x, pixel_y; 
+#define MINPRESSURE 800
+#define MAXPRESSURE 4000
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,7 +67,28 @@ void SystemClock_Config(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+
+const int TS_LEFT = 3726, TS_RT = 449, TS_TOP = 3823, TS_BOT = 318;
 uint16_t seTrgb(uint8_t r, uint8_t g, uint8_t b) { return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3); }
+	long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+	uint8_t Touch_getXY(void)
+{
+    TSPoint p = getPoint();
+    Gp_out(YP_PORT,YP_PIN,GPIO_NOPULL);      //restore shared pins
+		Gp_out(XM_PORT,XM_PIN,GPIO_NOPULL);      //restore shared pins
+    HAL_GPIO_WritePin(YP_PORT,YP_PIN,GPIO_PIN_SET);  
+		HAL_GPIO_WritePin(XM_PORT,XM_PIN,GPIO_PIN_SET);  
+	
+    
+    uint8_t pressed = (p.z > MINPRESSURE && p.z < MAXPRESSURE);
+    if (pressed) {
+        pixel_x = map(p.x, TS_LEFT, TS_RT, 0, width()); //.kbv makes sense to me
+        pixel_y = map(p.y, TS_TOP, TS_BOT, 0, height());
+    }
+    return pressed;
+}
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -76,7 +103,7 @@ uint16_t seTrgb(uint8_t r, uint8_t g, uint8_t b) { return ((r & 0xF8) << 8) | ((
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-HAL_GPIO_WritePin(RS_GPIO_Port,RS_Pin,GPIO_PIN_RESET);
+
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -97,60 +124,49 @@ HAL_GPIO_WritePin(RS_GPIO_Port,RS_Pin,GPIO_PIN_RESET);
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 	DWT_Delay_Init();
 	//reset();
 	 //xxx = readID();
-	 Adafruit_GFX_init(240, 320);
-begin(0x7575);
-
-setRotation(0);
-fillScreen(setrgb(0,0,0));
-
-//writeLine(10,10,30,30,setrgb(0,255,0))	;
-	//write('H');
-	//sprintf(x,"");
-	setTextSizeGfx(3);
+	Adafruit_GFX_init(240, 320);
+	begin(0x7575);
+	setRotation(0);
+	fillScreen(setrgb(0,0,0));
+	setTextSizeGfx(1);
 	setTextColor(setrgb(0,255,0),setrgb(0,0,255));
-//	print("Hello World");
-//	drawCircle(50,50,30,setrgb(255,255,255));
-//	fillCircle(50,50,30,setrgb(255,255,255));
-//	fillRectGfx(100,100,140,220,setrgb(255,255,255));
+//Calibrate_Procedure();
+	
 	GFX_button x1,x2;
 	initButton_new(&x1,60, 200, 100, 40, WHITE, CYAN, BLACK, "ON", 2);
 	x1.drawButton(&x1,0);
 	initButton_new(&x2,180, 200, 100, 40, WHITE, CYAN, BLACK, "OFF", 2);
 	x2.drawButton(&x2,0);
 	fillRect(40, 80, 160, 80, RED);
-	
-	
-//	setFont(FAmap);
-//drawPixel(101, 100, setrgb(0,0,0));
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//write_8(xxx);
-//		CS_ACTIVE;
-//		RD_ACTIVE;
-//		WR_ACTIVE;
-//		CD_COMMAND;
-//		//RS_ACTIVE;
-//		write_8(0);
-//		RESET_ACTIVE;
-//    
-//		HAL_Delay(100);
-//		xxx++;
-//		CS_IDLE;
-//		RD_IDLE;
-//		WR_IDLE;
-//		CD_DATA;
-//		//RS_IDLE;
-//		RESET_IDLE;
-//		write_8(0xff);
-//		HAL_Delay(100);
+		//
+		uint8_t down = Touch_getXY();
+		drawCircle(pixel_x,pixel_y,4,RED);
+    x1.press(&x1,down && x1.contains(&x1,pixel_x, pixel_y));
+    x2.press(&x2,down && x2.contains(&x2,pixel_x, pixel_y));
+    if (x1.justReleased(&x1))
+        x1.drawButton(&x1,0);
+    if (x2.justReleased(&x2))
+        x2.drawButton(&x2,0);
+    if (x1.justPressed(&x1)) {
+        x1.drawButton(&x1,1);
+        fillRect(40, 80, 160, 80, GREEN);
+    }
+    if (x2.justPressed(&x2)) {
+        x2.drawButton(&x2,1);
+        fillRect(40, 80, 160, 80, RED);
+    }
 		
   /* USER CODE END WHILE */
 
@@ -170,6 +186,7 @@ void SystemClock_Config(void)
 
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
@@ -194,6 +211,13 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
